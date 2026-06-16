@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+
+# Local nginx + PM2 working copies — keep the .example versions tracked
+deploy/nginx-sheets-mcp.conf
+deploy/ecosystem.config.cjs

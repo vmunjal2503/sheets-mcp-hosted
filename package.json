@@ -1,0 +1,45 @@
+{
+  "name": "sheets-mcp-hosted",
+  "version": "0.1.0",
+  "description": "Hosted MCP connector that lets Claude (and any MCP host) read, write, and format Google Sheets. One-click OAuth, no local install.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsc -w -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.0.0",
+    "express": "^4.21.2",
+    "googleapis": "^144.0.0",
+    "mongoose": "^8.9.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.7",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vmunjal2503/sheets-mcp-hosted.git"
+  },
+  "author": "Digiboffins <info@digiboffins.com>",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "google-sheets",
+    "claude",
+    "anthropic",
+    "ai-tools"
+  ]
+}

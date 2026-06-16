@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sheets MCP — Connect Claude to Google Sheets</title>
+    <meta
+      name="description"
+      content="One-click MCP server that lets Claude (and any MCP host) read, write, and format your Google Sheets. No local install."
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://rsms.me/" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <style>
+      html { font-family: 'Inter', system-ui, sans-serif; }
+      .gradient-bg {
+        background:
+          radial-gradient(circle at 20% 0%, rgba(99,102,241,0.10), transparent 50%),
+          radial-gradient(circle at 80% 100%, rgba(34,197,94,0.10), transparent 50%);
+      }
+    </style>
+  </head>
+  <body class="gradient-bg bg-zinc-50 text-zinc-900 min-h-screen flex flex-col">
+    <header class="px-6 py-5 flex items-center justify-between max-w-6xl mx-auto w-full">
+      <div class="flex items-center gap-2 text-lg font-semibold">
+        <span class="inline-block w-7 h-7 rounded-md bg-zinc-900 text-white grid place-items-center text-sm font-bold">S</span>
+        Sheets MCP
+      </div>
+      <a href="https://github.com/vmunjal2503/sheets-mcp-hosted" class="text-sm text-zinc-600 hover:text-zinc-900">GitHub →</a>
+    </header>
+
+    <main class="flex-1 px-6 max-w-6xl mx-auto w-full">
+      <section class="pt-14 pb-20 max-w-3xl">
+        <p class="text-sm uppercase tracking-widest text-emerald-700 font-medium mb-3">
+          Open-source MCP server
+        </p>
+        <h1 class="text-5xl md:text-6xl font-bold tracking-tight leading-[1.05] mb-6">
+          Connect Claude to your <span class="text-emerald-600">Google&nbsp;Sheets</span> in 60&nbsp;seconds.
+        </h1>
+        <p class="text-xl text-zinc-600 mb-10 leading-relaxed">
+          One-click OAuth, no local install. Lets any MCP-compatible host
+          read, write, and format your spreadsheets — autofit columns,
+          freeze headers, color rows, share with teammates, all from a
+          conversation.
+        </p>
+
+        <div class="flex flex-wrap gap-3">
+          <a
+            href="/auth/google"
+            class="inline-flex items-center gap-2 bg-zinc-900 text-white px-6 py-3 rounded-lg font-medium hover:bg-zinc-800 transition"
+          >
+            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor">
+              <path d="M12 11v3.7h6.9c-.6 2-2 4.7-6.9 4.7-4.2 0-7.5-3.5-7.5-7.7s3.3-7.7 7.5-7.7c2.3 0 4 1 4.9 1.9l3.3-3.2C18.4 1.2 15.6 0 12 0 5.4 0 0 5.4 0 12s5.4 12 12 12c6.9 0 11.5-4.9 11.5-11.7 0-.8-.1-1.4-.2-2H12z"/>
+            </svg>
+            Connect with Google
+          </a>
+          <a
+            href="#how-it-works"
+            class="inline-flex items-center gap-2 bg-white border border-zinc-300 text-zinc-900 px-6 py-3 rounded-lg font-medium hover:bg-zinc-50 transition"
+          >
+            How it works
+          </a>
+        </div>
+
+        <p class="text-sm text-zinc-500 mt-5">
+          We never store your sheet data. Only an OAuth refresh token,
+          encrypted at rest, so the connector can act on your behalf.
+        </p>
+      </section>
+
+      <section id="how-it-works" class="py-16 border-t border-zinc-200">
+        <h2 class="text-3xl font-bold tracking-tight mb-10">How it works</h2>
+        <ol class="space-y-6 max-w-3xl">
+          <li class="flex gap-5">
+            <span class="shrink-0 w-9 h-9 rounded-full bg-zinc-900 text-white grid place-items-center font-semibold">1</span>
+            <div>
+              <h3 class="font-semibold text-lg mb-1">Click "Connect with Google"</h3>
+              <p class="text-zinc-600">
+                Standard Google consent screen. You grant access to
+                Sheets + Drive. We capture an offline refresh token,
+                encrypt it with AES-256-GCM, and mint a personal MCP
+                bearer token for you.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-5">
+            <span class="shrink-0 w-9 h-9 rounded-full bg-zinc-900 text-white grid place-items-center font-semibold">2</span>
+            <div>
+              <h3 class="font-semibold text-lg mb-1">Paste the install command</h3>
+              <p class="text-zinc-600">
+                One <code class="bg-zinc-100 px-1.5 py-0.5 rounded">claude mcp add</code>
+                command, pre-filled with your token, ready to copy.
+                Works in Claude Code, Claude Desktop, Cursor, Continue.dev —
+                anything that speaks MCP.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-5">
+            <span class="shrink-0 w-9 h-9 rounded-full bg-zinc-900 text-white grid place-items-center font-semibold">3</span>
+            <div>
+              <h3 class="font-semibold text-lg mb-1">Talk to your Sheets</h3>
+              <p class="text-zinc-600 mb-3">
+                Just ask. Examples:
+              </p>
+              <ul class="space-y-2 text-zinc-700 text-[15px]">
+                <li class="bg-white border border-zinc-200 rounded-md px-3 py-2">"Find my expense tracker and add a row for today: groceries, 42.50."</li>
+                <li class="bg-white border border-zinc-200 rounded-md px-3 py-2">"Beautify the Q3 roadmap tab — autofit columns, freeze the header, wrap text."</li>
+                <li class="bg-white border border-zinc-200 rounded-md px-3 py-2">"Share the team OKRs sheet with priya@example.com as a commenter."</li>
+              </ul>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="py-16 border-t border-zinc-200">
+        <h2 class="text-3xl font-bold tracking-tight mb-8">13 tools, ready to call</h2>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3 max-w-4xl">
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">list_sheets</code><p class="text-sm text-zinc-600 mt-1">Search Drive by name.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">get_sheet_metadata</code><p class="text-sm text-zinc-600 mt-1">Tabs + grid sizes.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">read_range</code><p class="text-sm text-zinc-600 mt-1">Read an A1 range.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">write_range</code><p class="text-sm text-zinc-600 mt-1">Overwrite cells.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">append_rows</code><p class="text-sm text-zinc-600 mt-1">Insert at bottom.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">beautify</code><p class="text-sm text-zinc-600 mt-1">Header + freeze + autofit in one call.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">format_header_row</code><p class="text-sm text-zinc-600 mt-1">Bold + gray + freeze row 1.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">autofit_columns</code><p class="text-sm text-zinc-600 mt-1">Fit columns to content.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">freeze_rows</code><p class="text-sm text-zinc-600 mt-1">Freeze top N.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">wrap_text</code><p class="text-sm text-zinc-600 mt-1">Wrap on a range.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">set_background_color</code><p class="text-sm text-zinc-600 mt-1">RGB tint a range.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">add_sheet_tab</code><p class="text-sm text-zinc-600 mt-1">New tab.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">create_spreadsheet</code><p class="text-sm text-zinc-600 mt-1">New empty spreadsheet.</p></div>
+          <div class="bg-white border border-zinc-200 rounded-md px-4 py-3"><code class="font-mono text-sm font-semibold">share_with_email</code><p class="text-sm text-zinc-600 mt-1">Reader / commenter / writer.</p></div>
+        </div>
+      </section>
+
+      <section class="py-16 border-t border-zinc-200">
+        <h2 class="text-3xl font-bold tracking-tight mb-6">Security model</h2>
+        <ul class="space-y-3 max-w-3xl text-zinc-700 leading-relaxed">
+          <li>• Google refresh tokens are encrypted with <strong>AES-256-GCM</strong> before being written to Mongo. Key lives in env, never in the database.</li>
+          <li>• MCP bearer tokens are stored as <strong>sha256 hashes</strong> only — the plaintext is shown once on connect, then unrecoverable.</li>
+          <li>• Per-request OAuth client is built from the decrypted refresh token, used for that single call, then discarded.</li>
+          <li>• Revoke at any time — server-side revocation is instant.</li>
+          <li>• Code is <a class="text-emerald-700 underline" href="https://github.com/vmunjal2503/sheets-mcp-hosted">open-source on GitHub</a>; self-host if you'd rather not trust a hosted service.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="border-t border-zinc-200 mt-10 px-6 py-8 text-sm text-zinc-500">
+      <div class="max-w-6xl mx-auto flex flex-col md:flex-row gap-3 md:justify-between">
+        <div>Built by <a href="https://digiboffins.com" class="text-zinc-700 hover:text-zinc-900">Digiboffins</a> · MIT licensed</div>
+        <div class="flex gap-5">
+          <a href="https://github.com/vmunjal2503/sheets-mcp-hosted" class="hover:text-zinc-900">Source</a>
+          <a href="https://modelcontextprotocol.io" class="hover:text-zinc-900">MCP spec</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
