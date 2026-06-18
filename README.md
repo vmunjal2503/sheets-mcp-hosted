@@ -27,7 +27,7 @@ command, and from then on can do things like:
 
 ```
 Visitor ─┐
-         │  1. visit https://sheets-mcp.digiboffins.com
+         │  1. visit https://gsheets-mcp.digiboffins.com
          │  2. click "Connect with Google"
          │  3. Google consent → callback
          ↓
