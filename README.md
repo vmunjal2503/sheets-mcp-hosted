@@ -5,7 +5,7 @@
 > local install.
 
 Built by [Digiboffins](https://digiboffins.com). MIT licensed.
-Live at **https://sheets-mcp.digiboffins.com**.
+Live at **https://gsheets-mcp.digiboffins.com**.
 
 ## What this is
 
@@ -50,7 +50,7 @@ Visitor ─┐
 ## Self-host (optional)
 
 You don't need to self-host — the hosted version at
-`sheets-mcp.digiboffins.com` works for everyone. But if you'd rather
+`gsheets-mcp.digiboffins.com` works for everyone. But if you'd rather
 own the data plane, fork this repo and:
 
 ### 1. MongoDB Atlas (free M0)
@@ -121,11 +121,11 @@ will need to reconnect.
 
 ```bash
 claude mcp add --transport http --scope user google-sheets \
-  https://sheets-mcp.digiboffins.com/mcp \
+  https://gsheets-mcp.digiboffins.com/mcp \
   --header "Authorization: Bearer dbw_sheets_YOUR_TOKEN"
 ```
 
-(Or just go to https://sheets-mcp.digiboffins.com and click
+(Or just go to https://gsheets-mcp.digiboffins.com and click
 "Connect with Google" — it generates the exact command for you.)
 
 Restart your Claude session and the 13 tools appear as
