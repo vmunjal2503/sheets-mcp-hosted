@@ -13,7 +13,7 @@ The [Model Context Protocol](https://modelcontextprotocol.io) lets LLM
 hosts (Claude Code, Claude Desktop, Cursor, Continue.dev, Zed, custom
 agents…) call external tools through a standard JSON-RPC protocol.
 
-This service exposes **13 Google Sheets tools** to any MCP host over
+This service exposes **19 Google Sheets tools** to any MCP host over
 the Streamable HTTP transport. A visitor authorizes the connector
 with their Google account once, copies a one-line `claude mcp add`
 command, and from then on can do things like:
@@ -21,6 +21,8 @@ command, and from then on can do things like:
 - *"List my Sheets matching 'budget'"*
 - *"Append a row to my expense tracker: today's date, groceries, 42.50"*
 - *"Beautify the Q3 roadmap tab — autofit columns, bold + freeze header, wrap text on A2:G100"*
+- *"Add a Status dropdown (New/In Progress/Done) to column C"*
+- *"Format column E as currency and turn overdue dates red"*
 - *"Share this sheet with priya@example.com as a commenter"*
 
 ## Architecture
@@ -128,7 +130,7 @@ claude mcp add --transport http --scope user google-sheets \
 (Or just go to https://gsheets-mcp.digiboffins.com and click
 "Connect with Google" — it generates the exact command for you.)
 
-Restart your Claude session and the 13 tools appear as
+Restart your Claude session and the 19 tools appear as
 `mcp__google-sheets__*`.
 
 ## Tools
@@ -149,6 +151,11 @@ Restart your Claude session and the 13 tools appear as
 | `create_spreadsheet` | New empty spreadsheet |
 | `share_with_email` | Grant Drive permission to an email |
 | **`beautify`** | One-call combo: header + freeze + autofit + optional wrap |
+| `set_number_format` | Date / currency / percent / text display format |
+| `set_data_validation` | Dropdown from a value list (whole-column ranges) |
+| `set_text_format` | Bold / italic / underline / size / color on a range |
+| `conditional_format` | Tint cells when they match a text/number condition |
+| `set_borders` | Borders around + between cells |
 
 ## Security
 
