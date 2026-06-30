@@ -81,6 +81,63 @@ async function resolveSheetId(
   return match.sheetId!;
 }
 
+// Flexible A1 parser that also accepts open-ended ranges ("A:G", "P2:P") and
+// single cells ("A1") in addition to full ranges ("A1:G100"). Missing bounds
+// are left undefined (= unbounded in a Sheets GridRange).
+function a1Flexible(range: string): {
+  tabName: string | undefined;
+  startRowIndex?: number;
+  endRowIndex?: number;
+  startColumnIndex?: number;
+  endColumnIndex?: number;
+} {
+  const parts = range.split("!");
+  const tabName = parts.length === 2 ? parts[0] : undefined;
+  const a1 = (parts.length === 2 ? parts[1]! : parts[0]!).toUpperCase();
+  const colIndex = (letters: string) =>
+    letters.split("").reduce((acc, c) => acc * 26 + (c.charCodeAt(0) - 64), 0) - 1;
+  const endpoint = (s: string) => {
+    const mm = s.match(/^([A-Z]+)?(\d+)?$/);
+    if (!mm || (!mm[1] && !mm[2])) return null;
+    return {
+      col: mm[1] ? colIndex(mm[1]) : undefined,
+      row: mm[2] ? parseInt(mm[2], 10) : undefined,
+    };
+  };
+  const [lhs, rhs] = a1.includes(":") ? a1.split(":") : [a1, a1];
+  const L = endpoint(lhs!);
+  const R = endpoint(rhs!);
+  if (!L || !R) {
+    throw new Error(
+      `Range must be A1 form like 'Sheet1!A1:G100', 'P2:P' or 'A:G', got '${range}'`,
+    );
+  }
+  return {
+    tabName,
+    startColumnIndex: L.col,
+    endColumnIndex: R.col !== undefined ? R.col + 1 : undefined,
+    startRowIndex: L.row !== undefined ? L.row - 1 : undefined,
+    endRowIndex: R.row !== undefined ? R.row : undefined,
+  };
+}
+
+// Resolve a full A1 range string into a Sheets GridRange (numeric sheetId +
+// 0-indexed bounds), omitting any unbounded side.
+async function gridRange(
+  sheets: sheets_v4.Sheets,
+  spreadsheetId: string,
+  range: string,
+) {
+  const r = a1Flexible(range);
+  const sheetId = await resolveSheetId(sheets, spreadsheetId, r.tabName);
+  const gr: Record<string, number> = { sheetId };
+  if (r.startRowIndex !== undefined) gr.startRowIndex = r.startRowIndex;
+  if (r.endRowIndex !== undefined) gr.endRowIndex = r.endRowIndex;
+  if (r.startColumnIndex !== undefined) gr.startColumnIndex = r.startColumnIndex;
+  if (r.endColumnIndex !== undefined) gr.endColumnIndex = r.endColumnIndex;
+  return gr;
+}
+
 export function registerTools(server: McpServer, auth: OAuth2Client) {
   const sheets = google.sheets({ version: "v4", auth });
   const drive: drive_v3.Drive = google.drive({ version: "v3", auth });
@@ -567,6 +624,240 @@ export function registerTools(server: McpServer, auth: OAuth2Client) {
             "autofit columns",
           ].concat(wrapRange ? [`wrap_text on ${wrapRange}`] : []),
         };
+      }),
+  );
+
+  // ── Number format (dates / currency / percent) ─────────────────
+
+  server.tool(
+    "set_number_format",
+    "Set how a range's values are DISPLAYED (underlying value unchanged): dates, currency, percent, etc. Works on whole columns, e.g. 'Leads!S2:S'.",
+    {
+      spreadsheetId: z.string(),
+      range: z.string().describe("A1 range, e.g. 'Leads!S2:S' or 'Funnel!B14'."),
+      type: z
+        .enum(["DATE", "TIME", "DATE_TIME", "NUMBER", "CURRENCY", "PERCENT", "TEXT", "SCIENTIFIC"])
+        .describe("Sheets NumberFormat type."),
+      pattern: z
+        .string()
+        .optional()
+        .describe("Optional custom pattern, e.g. 'yyyy-mm-dd', 'dd-mmm', '₹#,##0', '0.0%'. Omit for the type default."),
+    },
+    async ({ spreadsheetId, range, type, pattern }) =>
+      call(async () => {
+        const r = await gridRange(sheets, spreadsheetId, range);
+        const res = await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [
+              {
+                repeatCell: {
+                  range: r,
+                  cell: {
+                    userEnteredFormat: {
+                      numberFormat: { type, ...(pattern ? { pattern } : {}) },
+                    },
+                  },
+                  fields: "userEnteredFormat.numberFormat",
+                },
+              },
+            ],
+          },
+        });
+        return res.data;
+      }),
+  );
+
+  // ── Data validation (dropdowns) ────────────────────────────────
+
+  server.tool(
+    "set_data_validation",
+    "Add a dropdown (data validation) to a range from a fixed value list. Ideal for Status/Priority columns, e.g. range 'Leads!P2:P'.",
+    {
+      spreadsheetId: z.string(),
+      range: z.string().describe("A1 range to apply the dropdown to, e.g. 'Leads!P2:P'."),
+      values: z.array(z.string()).min(1).describe("Allowed dropdown values."),
+      strict: z
+        .boolean()
+        .optional()
+        .describe("Reject entries not in the list (true) vs warn only (false). Default true."),
+      showDropdown: z
+        .boolean()
+        .optional()
+        .describe("Show the dropdown-arrow chip. Default true."),
+    },
+    async ({ spreadsheetId, range, values, strict, showDropdown }) =>
+      call(async () => {
+        const r = await gridRange(sheets, spreadsheetId, range);
+        const res = await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [
+              {
+                setDataValidation: {
+                  range: r,
+                  rule: {
+                    condition: {
+                      type: "ONE_OF_LIST",
+                      values: values.map((v) => ({ userEnteredValue: v })),
+                    },
+                    strict: strict ?? true,
+                    showCustomUi: showDropdown ?? true,
+                  },
+                },
+              },
+            ],
+          },
+        });
+        return res.data;
+      }),
+  );
+
+  // ── Text formatting (bold / italic / size / color) ─────────────
+
+  server.tool(
+    "set_text_format",
+    "Apply text formatting (bold / italic / underline / font size / text color) to any range, including a single header row like 'Today!A8:O8'.",
+    {
+      spreadsheetId: z.string(),
+      range: z.string().describe("A1 range, e.g. 'Today!A8:O8'."),
+      bold: z.boolean().optional(),
+      italic: z.boolean().optional(),
+      underline: z.boolean().optional(),
+      fontSize: z.number().int().min(1).optional(),
+      red: z.number().min(0).max(1).optional().describe("Text color red channel (0..1)."),
+      green: z.number().min(0).max(1).optional(),
+      blue: z.number().min(0).max(1).optional(),
+    },
+    async ({ spreadsheetId, range, bold, italic, underline, fontSize, red, green, blue }) =>
+      call(async () => {
+        const r = await gridRange(sheets, spreadsheetId, range);
+        const tf: Record<string, unknown> = {};
+        const f: string[] = [];
+        if (bold !== undefined) (tf.bold = bold), f.push("bold");
+        if (italic !== undefined) (tf.italic = italic), f.push("italic");
+        if (underline !== undefined) (tf.underline = underline), f.push("underline");
+        if (fontSize !== undefined) (tf.fontSize = fontSize), f.push("fontSize");
+        if (red !== undefined && green !== undefined && blue !== undefined) {
+          tf.foregroundColor = { red, green, blue };
+          f.push("foregroundColor");
+        }
+        if (f.length === 0) throw new Error("Provide at least one text-format property.");
+        const res = await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [
+              {
+                repeatCell: {
+                  range: r,
+                  cell: { userEnteredFormat: { textFormat: tf } },
+                  fields: `userEnteredFormat.textFormat(${f.join(",")})`,
+                },
+              },
+            ],
+          },
+        });
+        return res.data;
+      }),
+  );
+
+  // ── Conditional formatting ─────────────────────────────────────
+
+  server.tool(
+    "conditional_format",
+    "Add a conditional-format rule: when cells in a range match a condition, tint them. E.g. Priority='Hot' -> red.",
+    {
+      spreadsheetId: z.string(),
+      range: z.string().describe("A1 range the rule applies to, e.g. 'Leads!M2:M'."),
+      condition: z
+        .enum([
+          "TEXT_EQ",
+          "TEXT_CONTAINS",
+          "TEXT_STARTS_WITH",
+          "NUMBER_GREATER",
+          "NUMBER_LESS",
+          "NUMBER_EQ",
+          "NOT_BLANK",
+          "BLANK",
+        ])
+        .describe("Boolean condition type."),
+      value: z
+        .string()
+        .optional()
+        .describe("Comparison value (required for all except NOT_BLANK / BLANK)."),
+      red: z.number().min(0).max(1).describe("Background red channel (0..1)."),
+      green: z.number().min(0).max(1),
+      blue: z.number().min(0).max(1),
+    },
+    async ({ spreadsheetId, range, condition, value, red, green, blue }) =>
+      call(async () => {
+        const r = await gridRange(sheets, spreadsheetId, range);
+        const needsValue = condition !== "NOT_BLANK" && condition !== "BLANK";
+        if (needsValue && value === undefined) {
+          throw new Error(`Condition ${condition} requires a 'value'.`);
+        }
+        const res = await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [
+              {
+                addConditionalFormatRule: {
+                  index: 0,
+                  rule: {
+                    ranges: [r],
+                    booleanRule: {
+                      condition: {
+                        type: condition,
+                        ...(needsValue ? { values: [{ userEnteredValue: value }] } : {}),
+                      },
+                      format: { backgroundColor: { red, green, blue } },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        });
+        return res.data;
+      }),
+  );
+
+  // ── Borders ────────────────────────────────────────────────────
+
+  server.tool(
+    "set_borders",
+    "Draw borders around and between every cell in a range — makes a block read as a real table.",
+    {
+      spreadsheetId: z.string(),
+      range: z.string().describe("A1 range, e.g. 'Today!A8:E20'."),
+      style: z
+        .enum(["SOLID", "SOLID_MEDIUM", "SOLID_THICK", "DOTTED", "DASHED"])
+        .optional()
+        .describe("Border line style. Default SOLID."),
+    },
+    async ({ spreadsheetId, range, style }) =>
+      call(async () => {
+        const r = await gridRange(sheets, spreadsheetId, range);
+        const b = { style: style ?? "SOLID", color: { red: 0.6, green: 0.6, blue: 0.6 } };
+        const res = await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [
+              {
+                updateBorders: {
+                  range: r,
+                  top: b,
+                  bottom: b,
+                  left: b,
+                  right: b,
+                  innerHorizontal: b,
+                  innerVertical: b,
+                },
+              },
+            ],
+          },
+        });
+        return res.data;
       }),
   );
 }
